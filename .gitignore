@@ -1,0 +1,4 @@
+*.vscode
+*.pth
+results
+__*
