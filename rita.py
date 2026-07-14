@@ -1,4 +1,5 @@
 import timm
+import os
 import torch
 import torch.nn as nn
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
@@ -464,9 +465,15 @@ class UpsampleConcatSegformer(nn.Module):
 
 
 class RITA(nn.Module):
-    def __init__(self, num_classes=4):
+    def __init__(self, num_classes=4, pretrain_path=None):
         super(RITA, self).__init__()
-        self.segformer = MixVisionTransformer('/mnt/data0/xuekang/workspace/convswin/mit_b3.pth')
+        # Keep the official default, while allowing external training wrappers
+        # to provide an explicit checkpoint path without editing the model file.
+        pretrain_path = pretrain_path or os.environ.get(
+            'RITA_MIT_B3_PATH',
+            '/mnt/data0/xuekang/workspace/convswin/mit_b3.pth',
+        )
+        self.segformer = MixVisionTransformer(pretrain_path)
         self.loss_fn = nn.CrossEntropyLoss()
         self.updown = UpsampleConcatSegformer()
         self.conv1 = nn.Conv2d(512, num_classes, 1)
