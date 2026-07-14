@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import random
 import re
 from pathlib import Path
 from typing import Iterable
@@ -83,11 +84,15 @@ def main() -> None:
     parser.add_argument("--diffseg-limit", type=int, default=10000)
     parser.add_argument("--magicbrush-limit", type=int, default=0,
                         help="0 keeps the complete MagicBrush manifest")
+    parser.add_argument("--val-split", type=float, default=0.1)
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--check-files", action="store_true")
     args = parser.parse_args()
 
     if args.diffseg_limit <= 0:
         raise ValueError("--diffseg-limit must be positive")
+    if not 0.0 < args.val_split < 1.0:
+        raise ValueError("--val-split must lie strictly between 0 and 1")
     mb_limit = args.magicbrush_limit or None
     diffseg = read_pairs(args.diffseg_txt, args.diffseg_limit)
     magicbrush = read_pairs(args.magicbrush_txt, mb_limit)
@@ -95,19 +100,48 @@ def main() -> None:
         _assert_files(diffseg, "DiffSeg30k")
         _assert_files(magicbrush, "MagicBrush")
 
+    # Match the main AIGC-Localization protocol: combine the two manifests,
+    # shuffle with seed 42, and hold out the prefix as ID validation.
+    combined = [("DiffSeg30k", pair) for pair in diffseg]
+    combined.extend(("MagicBrush", pair) for pair in magicbrush)
+    random.Random(args.seed).shuffle(combined)
+    n_val = max(1, int(len(combined) * args.val_split))
+    val = combined[:n_val]
+    train = combined[n_val:]
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    diffseg_json = args.output_dir / "DiffSeg30k_first10000.json"
-    magicbrush_json = args.output_dir / "MagicBrush_full.json"
+    diffseg_json = args.output_dir / "DiffSeg30k_first10000_train.json"
+    magicbrush_json = args.output_dir / "MagicBrush_full_train.json"
+    diffseg_val_json = args.output_dir / "DiffSeg30k_IDVal.json"
+    magicbrush_val_json = args.output_dir / "MagicBrush_IDVal.json"
     config_json = args.output_dir / "rita_aigc_config.json"
-    for path, pairs in ((diffseg_json, diffseg), (magicbrush_json, magicbrush)):
+    val_config_json = args.output_dir / "rita_aigc_val_config.json"
+    train_by_domain = {
+        "DiffSeg30k": [pair for domain, pair in train if domain == "DiffSeg30k"],
+        "MagicBrush": [pair for domain, pair in train if domain == "MagicBrush"],
+    }
+    val_by_domain = {
+        "DiffSeg30k": [pair for domain, pair in val if domain == "DiffSeg30k"],
+        "MagicBrush": [pair for domain, pair in val if domain == "MagicBrush"],
+    }
+    for path, pairs in ((diffseg_json, train_by_domain["DiffSeg30k"]),
+                        (magicbrush_json, train_by_domain["MagicBrush"]),
+                        (diffseg_val_json, val_by_domain["DiffSeg30k"]),
+                        (magicbrush_val_json, val_by_domain["MagicBrush"])):
         path.write_text(json.dumps(pairs, indent=2) + "\n", encoding="utf-8")
     config = [["JsonDataset", str(diffseg_json)],
               ["JsonDataset", str(magicbrush_json)]]
     config_json.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    val_config = [["JsonDataset", str(diffseg_val_json)],
+                  ["JsonDataset", str(magicbrush_val_json)]]
+    val_config_json.write_text(json.dumps(val_config, indent=2) + "\n", encoding="utf-8")
 
-    print(f"[prepare] DiffSeg30k first-order pairs: {len(diffseg)}")
-    print(f"[prepare] MagicBrush pairs: {len(magicbrush)}")
+    print(f"[prepare] DiffSeg30k source-order pairs: {len(diffseg)}")
+    print(f"[prepare] MagicBrush source pairs: {len(magicbrush)}")
+    print(f"[prepare] train pairs: {len(train)}; ID-val pairs: {len(val)}; seed={args.seed}")
+    print(f"[prepare] ID-val by domain: DiffSeg30k={len(val_by_domain['DiffSeg30k'])}, "
+          f"MagicBrush={len(val_by_domain['MagicBrush'])}")
     print(f"[prepare] config: {config_json}")
+    print(f"[prepare] val config: {val_config_json}")
 
 
 if __name__ == "__main__":

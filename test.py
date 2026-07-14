@@ -166,6 +166,7 @@ def test_model_distributed(
     rank=None,
     num_class = 11,
     is_mvss_protocal = False,
+    dataset_config = None,
 ):
     """
     Distributed testing of a model across multiple GPUs
@@ -253,6 +254,14 @@ def test_model_distributed(
             'image_folder': '/mnt/data0/public_datasets/IML/IMD_20_1024/Tp',
             'mask_folder': '/mnt/data0/public_datasets/IML/IMD_20_1024/Gt_binary'
         })
+    if dataset_config is not None:
+        with open(dataset_config, 'r') as f:
+            datasets = [
+                {'name': os.path.splitext(os.path.basename(path))[0],
+                 'type': 'json', 'json_path': path}
+                for kind, path in __import__('json').load(f)
+                if kind == 'JsonDataset'
+            ]
                 # IMD 20    
     results = {}
     

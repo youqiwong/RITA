@@ -177,7 +177,7 @@ def build_loader_for_epoch(dataset, world_size, rank, epoch, batch_size=8, num_w
 
 
 
-def train_model(model, dataset,batch_szie, criterion, optimizer, num_epochs, device, rank, scheduler, num_classes, mvss_protocal):
+def train_model(model, dataset,batch_szie, criterion, optimizer, num_epochs, device, rank, scheduler, num_classes, mvss_protocal, val_config=None):
     best_acc = -torch.inf
     scaler = torch.amp.GradScaler()  
     best_f1 = -torch.inf
@@ -238,12 +238,12 @@ def train_model(model, dataset,batch_szie, criterion, optimizer, num_epochs, dev
 
         model.eval()
         generator = AutoregressiveMaskGenerator(model.module, image_size=(image_size, image_size), max_steps=10)
-        results = test_model_distributed(generator=generator, image_size=(image_size, image_size), device=device,num_class=num_classes, is_mvss_protocal=mvss_protocal)
+        results = test_model_distributed(generator=generator, image_size=(image_size, image_size), device=device,num_class=num_classes, is_mvss_protocal=mvss_protocal, dataset_config=val_config)
         if rank == 0:
-            keys = ['CASIA1.0', 'Columbia', 'Coverage', 'NIST16', 'Autosplice', 'CocoGlide', 'IMD_20']
+            keys = list(results.keys())
             valid_values = [results[k]['mean_f1'] for k in keys if k in results]  
             mean = sum(valid_values) / len(valid_values) if valid_values else 0
-            keys_gen = ['Columbia', 'Coverage', 'NIST16', 'Autosplice', 'CocoGlide', 'IMD_20']
+            keys_gen = list(results.keys())
             gen_values = [results[k]['mean_f1'] for k in keys_gen if k in results] 
             mean_gen = sum(gen_values) / len(gen_values) if gen_values else 0
             if mean > best_f1:
@@ -409,7 +409,7 @@ def main(image_size):
     T_max = num_epochs  
     scheduler = CosineAnnealingLR(optimizer, T_max=T_max, eta_min=5e-7)  
     batch_szie = args.batch_size
-    model = train_model(model, dataset,batch_szie, criterion, optimizer, num_epochs, device_local, rank, scheduler,num_classes,mvss_protocal)
+    model = train_model(model, dataset,batch_szie, criterion, optimizer, num_epochs, device_local, rank, scheduler,num_classes,mvss_protocal, val_config=val_config)
     dist.destroy_process_group()
 
 if __name__ == "__main__":
@@ -443,11 +443,13 @@ if __name__ == "__main__":
         type=int,
         default=8
     )
+    parser.add_argument('--val_config', type=str, default=None)
     args = parser.parse_args()
     output_dir = args.path
     image_size = args.image_size
     epoch = args.epoch
     data_path = args.data_path
+    val_config = args.val_config
     images_path = os.path.join(output_dir,'images')
     ckpt_path = os.path.join(output_dir,'ckpts')
     runs_path = os.path.join(output_dir,'runs')

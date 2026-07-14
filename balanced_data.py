@@ -201,6 +201,13 @@ class UnifiedNextMaskDatasetEpisodic(Dataset):
             H, W = self.image_size
             raw_mask =  torch.zeros((H, W), dtype=torch.long)
             
+        # Albumentations requires image and mask to have identical spatial
+        # shapes before geometric transforms.  Some AIGC manifests contain
+        # masks saved at a different resolution; align them with nearest
+        # interpolation before augmentation and keep the binary semantics.
+        if raw_mask.size != image.size:
+            raw_mask = raw_mask.resize(image.size, Image.Resampling.NEAREST)
+
         if self.common_transforms is not None:
             image = np.array(image)  # H, W, C
             raw_mask = np.array(raw_mask)    # H, W
@@ -281,4 +288,3 @@ class UnifiedNextMaskDatasetEpisodic(Dataset):
         ], dim=0)
 
         return input_tensor, target, rec["final_gt"]
-
