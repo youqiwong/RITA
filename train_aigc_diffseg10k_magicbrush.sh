@@ -11,6 +11,7 @@ MAGICBRUSH_TXT="${MAGICBRUSH_TXT:-/home/tione/notebook/users/youqiwang/Agent_All
 MIT_B3_PATH="${MIT_B3_PATH:-/home/tione/notebook/users/youqiwang/Mesorch/pretrained/mit_b3.pth}"
 OUTPUT_DIR="${OUTPUT_DIR:-${DATA_ROOT}/runs/rita_official_diffseg10k_magicbrush}"
 BATCH_SIZE="${BATCH_SIZE:-8}"
+VAL_BATCH_SIZE="${VAL_BATCH_SIZE:-2}"
 
 [[ -f "${DIFFSEG_TXT}" ]] || { echo "Missing DiffSeg manifest: ${DIFFSEG_TXT}" >&2; exit 2; }
 [[ -f "${MAGICBRUSH_TXT}" ]] || { echo "Missing MagicBrush manifest: ${MAGICBRUSH_TXT}" >&2; exit 2; }
@@ -39,4 +40,5 @@ torchrun --standalone --nproc_per_node="${NPROC_PER_NODE:-8}" train.py \
   --epoch 512 \
   --batch_size "${BATCH_SIZE}" \
   --data_path "${DATA_ROOT}/rita_aigc_config.json" \
-  --val_config "${DATA_ROOT}/rita_aigc_val_config.json"
+  --val_config "${DATA_ROOT}/rita_aigc_val_config.json" \
+  --val_batch_size "${VAL_BATCH_SIZE}"

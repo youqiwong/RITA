@@ -167,6 +167,7 @@ def test_model_distributed(
     num_class = 11,
     is_mvss_protocal = False,
     dataset_config = None,
+    val_batch_size = 2,
 ):
     """
     Distributed testing of a model across multiple GPUs
@@ -299,7 +300,7 @@ def test_model_distributed(
             # Create dataloader
             dataloader = DataLoader(
                 dataset, 
-                batch_size=batch_size, 
+                batch_size=val_batch_size,
                 sampler=sampler,
                 num_workers=4,
                 pin_memory=True,
