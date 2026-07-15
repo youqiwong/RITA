@@ -86,8 +86,9 @@ def scores_from_sequence(sequence, eos_token_id, padding_id):
     return pred
 
 
-def evaluate_one(label, path, model, device, image_size, batch_size, rank, world_size):
-    dataset = TxtDataset(read_pairs(path), image_size)
+def evaluate_one(label, path, model, device, image_size, batch_size, rank, world_size, save_masks_dir=None):
+    pairs = read_pairs(path)
+    dataset = TxtDataset(pairs, image_size)
     sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank,
                                  shuffle=False, drop_last=False)
     loader = DataLoader(dataset, batch_size=batch_size, sampler=sampler,
@@ -96,7 +97,7 @@ def evaluate_one(label, path, model, device, image_size, batch_size, rank, world
     f1_sum = torch.zeros(1, device=device, dtype=torch.float64)
     iou_sum = torch.zeros(1, device=device, dtype=torch.float64)
     count = torch.zeros(1, device=device, dtype=torch.float64)
-    for images, masks in tqdm(loader, desc=label, disable=rank != 0):
+    for batch_index, (images, masks) in enumerate(tqdm(loader, desc=label, disable=rank != 0)):
         images = images.to(device, non_blocking=True)
         masks = masks.to(device, non_blocking=True).bool()
         with torch.no_grad():
@@ -107,8 +108,20 @@ def evaluate_one(label, path, model, device, image_size, batch_size, rank, world
             tp = (pred & gt).sum().double()
             fp = (pred & ~gt).sum().double()
             fn = ((~pred) & gt).sum().double()
-            f1_sum += 2 * tp / (2 * tp + fp + fn + 1e-8)
-            iou_sum += tp / (tp + fp + fn + 1e-8)
+            f1 = 2 * tp / (2 * tp + fp + fn + 1e-8)
+            iou = tp / (tp + fp + fn + 1e-8)
+            f1_sum += f1
+            iou_sum += iou
+            if save_masks_dir:
+                out_dir = Path(save_masks_dir) / label
+                out_dir.mkdir(parents=True, exist_ok=True)
+                source_index = rank + (batch_index * batch_size + i) * world_size
+                source_index = min(source_index, len(pairs) - 1)
+                stem = Path(pairs[source_index][0]).stem
+                out_path = out_dir / f"{stem}_iou{iou.item():.4f}.png"
+                if out_path.exists():
+                    out_path = out_dir / f"{stem}_{source_index}_iou{iou.item():.4f}.png"
+                Image.fromarray((pred.detach().cpu().numpy().astype('uint8') * 255)).save(out_path)
             count += 1
     for tensor in (f1_sum, iou_sum, count):
         dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
@@ -125,6 +138,7 @@ def main():
     parser.add_argument("--image-size", type=int, default=512)
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--output", default=None)
+    parser.add_argument("--save-masks-dir", default=None)
     args = parser.parse_args()
     dist.init_process_group(backend="nccl")
     rank = dist.get_rank()
@@ -140,7 +154,8 @@ def main():
     for spec in args.test_txts:
         label, path = parse_manifest(spec)
         results.append(evaluate_one(label, path, model, device, args.image_size,
-                                    args.batch_size, rank, world_size))
+                                    args.batch_size, rank, world_size,
+                                    save_masks_dir=args.save_masks_dir))
     if rank == 0:
         grouped = defaultdict(list)
         for result in results:
