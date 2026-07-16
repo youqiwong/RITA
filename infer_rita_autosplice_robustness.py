@@ -9,7 +9,7 @@ from PIL import Image
 from tqdm import tqdm
 
 from rita import RITA
-from sidset_robustness_protocol import (
+from autosplice_robustness_protocol import (
     apply_corruption,
     read_lines,
     resolve_pair,

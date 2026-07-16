@@ -1,4 +1,4 @@
-"""Fixed SID-Set robustness protocol shared by RITA robustness scripts."""
+"""Fixed AutoSplice robustness protocol shared by RITA robustness scripts."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image
 
 
-SIDSET_TXT = Path("/pubdata/wangyq/Projects/Datasets/AIGC-Loc-Testsets/SID_Set_tp/SID_Set_tp.txt")
+AUTOSPLICE_TXT = Path("/pubdata/wangyq/Projects/Datasets/AIGC-Loc-Testsets/AutoSplice_tp/AutoSplice_tp.txt")
 CORRUPTION_LEVELS = {
     "noise": [0, 3, 7, 11, 15, 19, 23],
     "blur": [1, 3, 7, 11, 15, 19, 23],
@@ -118,12 +118,12 @@ def _mask_ratio(pair):
     return float(np.count_nonzero(mask > 127) / mask.size)
 
 
-def prepare_manifest(source_txt=SIDSET_TXT, output_dir="robustness_results/sidset_n1000_seed42/manifests",
+def prepare_manifest(source_txt=AUTOSPLICE_TXT, output_dir="robustness_results/autosplice_n1000_seed42/manifests",
                      sample_count=1000, seed=42, workers=32):
     source_txt = Path(source_txt).resolve()
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    stem = f"sidset_n{sample_count}_seed{seed}"
+    stem = f"autosplice_n{sample_count}_seed{seed}"
     manifest = output_dir / f"{stem}.txt"
     metadata_path = output_dir / f"{stem}.json"
     expected = {"source_txt": str(source_txt), "sample_count": sample_count, "seed": seed, "strata": 10}
@@ -159,7 +159,7 @@ def write_results(output_dir, method, manifest, rows):
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     fields = ["Method", "Corruption", "Level", "Samples", "Missing", "Pixel_F1", "IoU", "Seed", "Manifest"]
-    long_path = output_dir / "sidset_robustness_long.tsv"
+    long_path = output_dir / "autosplice_robustness_long.tsv"
     with long_path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields, delimiter="\t")
         writer.writeheader()
@@ -175,7 +175,7 @@ def write_results(output_dir, method, manifest, rows):
                 "Seed": 42,
                 "Manifest": str(Path(manifest).resolve()),
             })
-    for metric, filename in (("f1", "sidset_robustness_f1.tsv"), ("iou", "sidset_robustness_iou.tsv")):
+    for metric, filename in (("f1", "autosplice_robustness_f1.tsv"), ("iou", "autosplice_robustness_iou.tsv")):
         with (output_dir / filename).open("w", encoding="utf-8", newline="") as handle:
             writer = csv.writer(handle, delimiter="\t")
             writer.writerow(["Method"] + [

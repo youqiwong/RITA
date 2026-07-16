@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from sidset_robustness_protocol import CORRUPTION_LEVELS, apply_corruption, stratified_sample_indices
+from autosplice_robustness_protocol import CORRUPTION_LEVELS, apply_corruption, stratified_sample_indices
 
 
 class ProtocolTests(unittest.TestCase):

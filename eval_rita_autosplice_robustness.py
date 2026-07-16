@@ -6,8 +6,8 @@ import cv2
 import numpy as np
 from tqdm import tqdm
 
-from infer_rita_sidset_robustness import output_name
-from sidset_robustness_protocol import (
+from infer_rita_autosplice_robustness import output_name
+from autosplice_robustness_protocol import (
     CORRUPTION_LEVELS,
     condition_key,
     read_lines,

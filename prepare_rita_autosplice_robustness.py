@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 
-from sidset_robustness_protocol import prepare_manifest
+from autosplice_robustness_protocol import prepare_manifest
 
 
 def main():
