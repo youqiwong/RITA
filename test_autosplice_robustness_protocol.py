@@ -18,9 +18,9 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(DEFAULT_SAMPLE_COUNT, 3621)
 
     def test_exact_levels(self):
-        self.assertEqual(CORRUPTION_LEVELS["noise"], [0, 3, 7, 11, 15, 19, 23])
-        self.assertEqual(CORRUPTION_LEVELS["blur"], [1, 3, 7, 11, 15, 19, 23])
-        self.assertEqual(CORRUPTION_LEVELS["jpeg"], [100, 90, 80, 70, 60, 50, 40])
+        self.assertEqual(CORRUPTION_LEVELS["noise"], [0, 2, 4, 6, 8, 10, 12])
+        self.assertEqual(CORRUPTION_LEVELS["blur"], [1, 3, 5, 7, 9, 11, 13])
+        self.assertEqual(CORRUPTION_LEVELS["jpeg"], [100, 95, 90, 85, 80, 75, 70])
         self.assertEqual(CORRUPTION_LEVELS["resize"], [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4])
 
     def test_stratified_sample_is_fixed(self):

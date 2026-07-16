@@ -17,9 +17,9 @@ from PIL import Image
 AUTOSPLICE_TXT = Path("/pubdata/wangyq/Projects/Datasets/AIGC-Loc-Testsets/AutoSplice_tp/AutoSplice_tp.txt")
 DEFAULT_SAMPLE_COUNT = 3621
 CORRUPTION_LEVELS = {
-    "noise": [0, 3, 7, 11, 15, 19, 23],
-    "blur": [1, 3, 7, 11, 15, 19, 23],
-    "jpeg": [100, 90, 80, 70, 60, 50, 40],
+    "noise": [0, 2, 4, 6, 8, 10, 12],
+    "blur": [1, 3, 5, 7, 9, 11, 13],
+    "jpeg": [100, 95, 90, 85, 80, 75, 70],
     "resize": [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4],
 }
 

@@ -5,7 +5,7 @@ RITA=/pubdata/wangyq/Projects/RITA
 DATA=/pubdata/wangyq/Projects/Datasets/AIGC-Loc-Testsets
 PY=/pubdata/wangyq/anaconda3/envs/qwen_vl_env/bin/python
 CKPT="${CKPT:-${DATA}/RITA_DiffSeg10k_MagicBrush/runs/rita_official_diffseg10k_magicbrush/ckpts/best.pth}"
-OUT="${OUT:-${RITA}/robustness_results/autosplice_all_seed42}"
+OUT="${OUT:-${RITA}/robustness_results/autosplice_all_compact7_seed42}"
 MANIFEST="${OUT}/manifests/autosplice_n3621_seed42.txt"
 
 export PYTHONNOUSERSITE=1
