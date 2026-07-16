@@ -18,7 +18,7 @@ AUTOSPLICE_TXT = Path("/pubdata/wangyq/Projects/Datasets/AIGC-Loc-Testsets/AutoS
 DEFAULT_SAMPLE_COUNT = 3621
 CORRUPTION_LEVELS = {
     "noise": [0, 2, 4, 6, 8, 10, 12],
-    "blur": [1, 3, 5, 7, 9, 11, 13],
+    "blur": [0, 2, 4, 6, 8, 10, 12],
     "jpeg": [100, 95, 90, 85, 80, 75, 70],
     "resize": [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4],
 }
@@ -30,7 +30,7 @@ def level_text(level):
 
 def condition_key(corruption, level):
     if (corruption == "noise" and float(level) == 0) or (
-        corruption == "blur" and int(level) == 1
+        corruption == "blur" and float(level) == 0
     ) or (corruption == "resize" and float(level) == 1):
         return "clean"
     return f"{corruption}_{level_text(level)}"
@@ -54,12 +54,10 @@ def apply_corruption(image, corruption, level, seed, sample_index):
         noise = rng.normal(0, sigma, image.shape).astype(np.float32)
         return np.clip(image.astype(np.float32) + noise, 0, 255).astype(np.uint8)
     if corruption == "blur":
-        kernel = int(level)
-        if kernel == 1:
+        sigma = float(level)
+        if sigma == 0:
             return image.copy()
-        if kernel <= 0 or kernel % 2 == 0:
-            raise ValueError(f"Blur kernel must be positive and odd: {kernel}")
-        return cv2.GaussianBlur(image, (kernel, kernel), sigmaX=kernel / 6.0)
+        return cv2.GaussianBlur(image, (0, 0), sigmaX=sigma, sigmaY=sigma)
     if corruption == "jpeg":
         buffer = io.BytesIO()
         Image.fromarray(image, mode="RGB").save(buffer, format="JPEG", quality=int(level))

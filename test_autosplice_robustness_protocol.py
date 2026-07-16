@@ -19,7 +19,7 @@ class ProtocolTests(unittest.TestCase):
 
     def test_exact_levels(self):
         self.assertEqual(CORRUPTION_LEVELS["noise"], [0, 2, 4, 6, 8, 10, 12])
-        self.assertEqual(CORRUPTION_LEVELS["blur"], [1, 3, 5, 7, 9, 11, 13])
+        self.assertEqual(CORRUPTION_LEVELS["blur"], [0, 2, 4, 6, 8, 10, 12])
         self.assertEqual(CORRUPTION_LEVELS["jpeg"], [100, 95, 90, 85, 80, 75, 70])
         self.assertEqual(CORRUPTION_LEVELS["resize"], [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4])
 
@@ -33,7 +33,7 @@ class ProtocolTests(unittest.TestCase):
     def test_corruption_is_deterministic_and_shape_preserving(self):
         image = np.arange(32 * 48 * 3, dtype=np.uint8).reshape(32, 48, 3)
         np.testing.assert_array_equal(apply_corruption(image, "noise", 0, 42, 3), image)
-        np.testing.assert_array_equal(apply_corruption(image, "blur", 1, 42, 3), image)
+        np.testing.assert_array_equal(apply_corruption(image, "blur", 0, 42, 3), image)
         np.testing.assert_array_equal(apply_corruption(image, "resize", 1.0, 42, 3), image)
         first = apply_corruption(image, "noise", 7, 42, 3)
         second = apply_corruption(image, "noise", 7, 42, 3)
