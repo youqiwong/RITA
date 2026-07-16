@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import argparse
 
-from autosplice_robustness_protocol import prepare_manifest
+from autosplice_robustness_protocol import DEFAULT_SAMPLE_COUNT, prepare_manifest
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--sample-count", type=int, default=1000)
+    parser.add_argument("--sample-count", type=int, default=DEFAULT_SAMPLE_COUNT)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--workers", type=int, default=32)
     args = parser.parse_args()

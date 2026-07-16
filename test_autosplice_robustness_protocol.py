@@ -1,11 +1,22 @@
 import unittest
+import tempfile
+from pathlib import Path
 
 import numpy as np
 
-from autosplice_robustness_protocol import CORRUPTION_LEVELS, apply_corruption, stratified_sample_indices
+from autosplice_robustness_protocol import (
+    CORRUPTION_LEVELS,
+    DEFAULT_SAMPLE_COUNT,
+    apply_corruption,
+    cleanup_prediction_tree,
+    stratified_sample_indices,
+)
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_default_uses_full_autosplice(self):
+        self.assertEqual(DEFAULT_SAMPLE_COUNT, 3621)
+
     def test_exact_levels(self):
         self.assertEqual(CORRUPTION_LEVELS["noise"], [0, 3, 7, 11, 15, 19, 23])
         self.assertEqual(CORRUPTION_LEVELS["blur"], [1, 3, 7, 11, 15, 19, 23])
@@ -28,6 +39,18 @@ class ProtocolTests(unittest.TestCase):
         second = apply_corruption(image, "noise", 7, 42, 3)
         np.testing.assert_array_equal(first, second)
         self.assertEqual(apply_corruption(image, "resize", 0.4, 42, 3).shape, image.shape)
+
+    def test_prediction_cleanup_is_opt_out(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pred_root = Path(tmp) / "pred_masks"
+            pred_root.mkdir()
+            (pred_root / "mask.png").write_bytes(b"mask")
+            cleanup_prediction_tree(pred_root, keep=False)
+            self.assertFalse(pred_root.exists())
+
+            pred_root.mkdir()
+            cleanup_prediction_tree(pred_root, keep=True)
+            self.assertTrue(pred_root.exists())
 
 
 if __name__ == "__main__":

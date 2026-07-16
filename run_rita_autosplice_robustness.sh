@@ -5,8 +5,8 @@ RITA=/pubdata/wangyq/Projects/RITA
 DATA=/pubdata/wangyq/Projects/Datasets/AIGC-Loc-Testsets
 PY=/pubdata/wangyq/anaconda3/envs/qwen_vl_env/bin/python
 CKPT="${CKPT:-${DATA}/RITA_DiffSeg10k_MagicBrush/runs/rita_official_diffseg10k_magicbrush/ckpts/best.pth}"
-OUT="${OUT:-${RITA}/robustness_results/autosplice_n1000_seed42}"
-MANIFEST="${OUT}/manifests/autosplice_n1000_seed42.txt"
+OUT="${OUT:-${RITA}/robustness_results/autosplice_all_seed42}"
+MANIFEST="${OUT}/manifests/autosplice_n3621_seed42.txt"
 
 export PYTHONNOUSERSITE=1
 export RITA_MIT_B3_PATH="${RITA}/pretrained/mit_b3.pth"
@@ -19,7 +19,7 @@ if [ "${#GPU_LIST[@]}" -ne 6 ]; then
 fi
 
 "${PY}" prepare_rita_autosplice_robustness.py \
-  --output-dir "${OUT}/manifests" --sample-count 1000 --seed 42 --workers 32
+  --output-dir "${OUT}/manifests" --sample-count 3621 --seed 42 --workers 32
 
 PIDS=()
 for rank in "${!GPU_LIST[@]}"; do
@@ -38,9 +38,11 @@ if [ "${FAIL}" -ne 0 ]; then
   exit 1
 fi
 
+KEEP_ARGS=()
+if [ "${KEEP_PRED_MASKS:-0}" = "1" ]; then KEEP_ARGS+=(--keep-pred-masks); fi
 "${PY}" eval_rita_autosplice_robustness.py \
   --manifest "${MANIFEST}" --pred-root "${OUT}/pred_masks" \
-  --output-dir "${OUT}/tsv" --method RITA-Retrain
+  --output-dir "${OUT}/tsv" --method RITA-Retrain "${KEEP_ARGS[@]}"
 
 echo "Long TSV: ${OUT}/tsv/autosplice_robustness_long.tsv"
 echo "F1 TSV: ${OUT}/tsv/autosplice_robustness_f1.tsv"

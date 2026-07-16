@@ -9,6 +9,7 @@ from tqdm import tqdm
 from infer_rita_autosplice_robustness import output_name
 from autosplice_robustness_protocol import (
     CORRUPTION_LEVELS,
+    cleanup_prediction_tree,
     condition_key,
     read_lines,
     resolve_pair,
@@ -22,6 +23,7 @@ def main():
     parser.add_argument("--pred-root", required=True)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--method", default="RITA-Retrain")
+    parser.add_argument("--keep-pred-masks", action="store_true")
     args = parser.parse_args()
 
     pairs = [resolve_pair(line, Path(args.manifest).parent) for line in read_lines(args.manifest)]
@@ -67,6 +69,9 @@ def main():
             )
     path = write_results(args.output_dir, args.method, args.manifest, rows)
     print(f"TSV: {path}")
+    cleanup_prediction_tree(args.pred_root, keep=args.keep_pred_masks)
+    if not args.keep_pred_masks:
+        print(f"Removed temporary predictions: {args.pred_root}")
 
 
 if __name__ == "__main__":

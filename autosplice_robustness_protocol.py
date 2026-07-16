@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from PIL import Image
 
 
 AUTOSPLICE_TXT = Path("/pubdata/wangyq/Projects/Datasets/AIGC-Loc-Testsets/AutoSplice_tp/AutoSplice_tp.txt")
+DEFAULT_SAMPLE_COUNT = 3621
 CORRUPTION_LEVELS = {
     "noise": [0, 3, 7, 11, 15, 19, 23],
     "blur": [1, 3, 7, 11, 15, 19, 23],
@@ -79,7 +81,7 @@ def apply_corruption(image, corruption, level, seed, sample_index):
     raise ValueError(f"Unknown corruption: {corruption}")
 
 
-def stratified_sample_indices(ratios, sample_count=1000, seed=42, strata=10):
+def stratified_sample_indices(ratios, sample_count=DEFAULT_SAMPLE_COUNT, seed=42, strata=10):
     ratios = np.asarray(ratios, dtype=np.float64)
     if sample_count <= 0:
         raise ValueError("sample_count must be positive")
@@ -118,8 +120,8 @@ def _mask_ratio(pair):
     return float(np.count_nonzero(mask > 127) / mask.size)
 
 
-def prepare_manifest(source_txt=AUTOSPLICE_TXT, output_dir="robustness_results/autosplice_n1000_seed42/manifests",
-                     sample_count=1000, seed=42, workers=32):
+def prepare_manifest(source_txt=AUTOSPLICE_TXT, output_dir="robustness_results/autosplice_all_seed42/manifests",
+                     sample_count=DEFAULT_SAMPLE_COUNT, seed=42, workers=32):
     source_txt = Path(source_txt).resolve()
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -153,6 +155,13 @@ def prepare_manifest(source_txt=AUTOSPLICE_TXT, output_dir="robustness_results/a
     }
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     return manifest
+
+
+def cleanup_prediction_tree(pred_root, keep=False):
+    """Remove temporary predictions only after metrics were written successfully."""
+    pred_root = Path(pred_root)
+    if not keep and pred_root.exists():
+        shutil.rmtree(pred_root)
 
 
 def write_results(output_dir, method, manifest, rows):
